@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistema de Empréstimos</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    #login, #app { display: none; justify-content: center; align-items: center; height: 100vh; }
+    #login { display: flex; }
+    form { display: flex; flex-direction: column; max-width: 300px; width: 100%; }
+    input, button, select { margin-bottom: 10px; padding: 8px; font-size: 16px; }
+    .cliente { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    .dias { display: flex; flex-wrap: wrap; gap: 4px; }
+    .dia { width: 20px; height: 20px; background: #eee; text-align: center; line-height: 20px; cursor: pointer; }
+    .pago { background: lightgreen; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="login">
+  <form id="loginForm">
+    <h2 style="text-align:center;margin-bottom:1rem">Acesso</h2>
+    <label for="user">Usuário</label>
+    <input type="text" id="user" required />
+    <label for="pass">Senha</label>
+    <input type="password" id="pass" required />
+    <button type="submit">Entrar</button>
+  </form>
+</section>
+
+<!-- APLICATIVO -->
+<section id="app" style="display:none; padding:20px">
+  <button id="logoutBtn">Sair</button>
+  <h2>Cadastro de Clientes</h2>
+  <form id="clientForm">
+    <input type="text" placeholder="Nome" id="nome" required />
+    <input type="text" placeholder="CPF" id="cpf" required />
+    <input type="text" placeholder="Telefone" id="telefone" required />
+    <input type="text" placeholder="Rua" id="rua" required />
+    <select id="dias">
+      <option value="20">20 dias</option>
+      <option value="24">24 dias</option>
+    </select>
+    <input type="number" placeholder="Valor do Empréstimo" id="valor" required />
+    <button type="submit">Cadastrar Cliente</button>
+  </form>
+
+  <div id="clientes"></div>
+</section>
+
+<script>
+  const loginForm = document.getElementById('loginForm');
+  const loginSection = document.getElementById('login');
+  const appSection = document.getElementById('app');
+
+  loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const user = document.getElementById('user').value.trim();
+    const pass = document.getElementById('pass').value.trim();
+    if (user === 'thiago' && pass === '2025') {
+      alert('Login realizado com sucesso! Acesse o cadastro de clientes abaixo.');
+      loginSection.style.display = 'none';
+      appSection.style.display = 'block';
+      loginForm.reset();
+    } else {
+      alert('Usuário ou senha inválidos');
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    appSection.style.display = 'none';
+    loginSection.style.display = 'flex';
+  });
+
+  const clientForm = document.getElementById('clientForm');
+  const clientesDiv = document.getElementById('clientes');
+  let clientes = [];
+
+  function renderClientes() {
+    clientesDiv.innerHTML = '';
+    clientes.forEach((cliente, index) => {
+      const div = document.createElement('div');
+      div.className = 'cliente';
+
+      const diasDiv = document.createElement('div');
+      diasDiv.className = 'dias';
+      cliente.pagamentos.forEach((pago, i) => {
+        const dia = document.createElement('div');
+        dia.className = 'dia';
+        if (pago) dia.classList.add('pago');
+        dia.textContent = i + 1;
+        dia.onclick = () => {
+          cliente.pagamentos[i] = true;
+          cliente.valorPago += cliente.valorTotal / cliente.pagamentos.length;
+          renderClientes();
+        };
+        diasDiv.appendChild(dia);
+      });
+
+      const totalRestante = (cliente.valorTotal - cliente.valorPago).toFixed(2);
+      div.innerHTML = `
+        <p><strong>Nome:</strong> ${cliente.nome}</p>
+        <p><strong>CPF:</strong> ${cliente.cpf}</p>
+        <p><strong>Telefone:</strong> ${cliente.telefone}</p>
+        <p><strong>Rua:</strong> ${cliente.rua}</p>
+        <p><strong>Valor Total:</strong> R$ ${cliente.valorTotal.toFixed(2)}</p>
+        <p><strong>Restante:</strong> R$ ${totalRestante}</p>
+      `;
+
+      div.appendChild(diasDiv);
+
+      const btnExcluir = document.createElement('button');
+      btnExcluir.textContent = 'Excluir';
+      btnExcluir.onclick = () => {
+        clientes.splice(index, 1);
+        renderClientes();
+      };
+
+      const btnEditar = document.createElement('button');
+      btnEditar.textContent = 'Editar';
+      btnEditar.onclick = () => {
+        document.getElementById('nome').value = cliente.nome;
+        document.getElementById('cpf').value = cliente.cpf;
+        document.getElementById('telefone').value = cliente.telefone;
+        document.getElementById('rua').value = cliente.rua;
+        document.getElementById('dias').value = cliente.dias;
+        document.getElementById('valor').value = cliente.valorBase;
+        clientes.splice(index, 1);
+        renderClientes();
+      };
+
+      div.appendChild(btnEditar);
+      div.appendChild(btnExcluir);
+
+      clientesDiv.appendChild(div);
+    });
+  }
+
+  clientForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const nome = document.getElementById('nome').value;
+    const cpf = document.getElementById('cpf').value;
+    const telefone = document.getElementById('telefone').value;
+    const rua = document.getElementById('rua').value;
+    const dias = parseInt(document.getElementById('dias').value);
+    const valorBase = parseFloat(document.getElementById('valor').value);
+
+    let taxa = dias === 20 ? 0.2 : 0.25;
+    const valorTotal = valorBase * (1 + taxa);
+    const pagamentos = new Array(dias).fill(false);
+
+    clientes.push({
+      nome, cpf, telefone, rua, dias, valorBase, valorTotal, valorPago: 0, pagamentos
+    });
+
+    clientForm.reset();
+    renderClientes();
+  });
+</script>
+
+</body>
+</html>
